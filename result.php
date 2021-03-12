@@ -64,4 +64,28 @@
     function get_protocol_1($poor_score,$water_score) {
         return ($poor_score * 0.7) + ($water_score * 0.3);
     }
-
+// 프로토콜 2 (편한 축사 환경)
+    // 깔짚 수분 간이측정 점수 계산
+    function get_straw_score($straw_fead_tank,$straw_normal,$straw_resting_place) {
+        // result.py 의 내용이 이해가 안됨
+        return null;
+    }
+    // 가축 외형 위생 점수 계산
+    function get_outward_hygiene_score($outward_hygiene) {
+        $outward_hygiene_score = 0;
+        if($outward_hygiene == 0){ return $outward_hygiene_score = 100;}
+        elseif($outward_hygiene <= 3){return $outward_hygiene_score = 90;}
+        elseif($outward_hygiene <= 6){return $outward_hygiene_score = 80;}
+        elseif($outward_hygiene <= 9){return $outward_hygiene_score = 70;}
+        elseif($outward_hygiene <= 13){return $outward_hygiene_score = 60;}
+        elseif($outward_hygiene <= 18){return $outward_hygiene_score = 50;}
+        elseif($outward_hygiene <= 23){return $outward_hygiene_score = 40;}
+        elseif($outward_hygiene <= 29){return $outward_hygiene_score = 30;}
+        elseif($outward_hygiene <= 37){return $outward_hygiene_score = 20;}
+        elseif($outward_hygiene <= 52){return $outward_hygiene_score = 10;}
+        else{return $outward_hygiene_score = 0;}
+    }
+    function get_rest_score($straw_score,$outward_hygiene_score){
+        return ($straw_score * 0.5)+($outward_hygiene_score*0.5);
+    }
+?>
