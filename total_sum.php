@@ -1,5 +1,5 @@
 <?php
-   $conn = mysqli_connect("localhost", "root", "jj9672@@" , "hyuk");
+   $conn = mysqli_connect("localhost", "root", "" , "");
    $sql = "SELECT * FROM survey order by poor desc limit 1;";
    $result = mysqli_query($conn, $sql);
    if (mysqli_num_rows($result) > 0) {
