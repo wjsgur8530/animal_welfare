@@ -521,22 +521,117 @@ function getDiseaseSectionThree($diarrhea)
 function getDiseaseSectionFour($breastInflammation)
 {
     $sectionScores = array("care" => 0, "warning" => 0);
-    // 상태 좋음
+    // 유방염 상태 좋음 => "0"
     if($breastInflammation < 8.75) {
         return $sectionScores;
     }
+    // 유방염(주의) => "주의"
     elseif($breastInflammation < 17.5) {
         $sectionScores["care"] = $sectionScores["care"] + 1;
     }
+    // 유방염(경보) => "경보"
     elseif(17.5 <= $breastInflammation) {
         $sectionScores["warning"] = $sectionScores["warning"] + 1;
     }
     return $sectionScores;
 }
 
+// 질병 영역 5 계산 (외음부분비물)
+function getDiseaseSectionFive($outGenitalsSecretion)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 외음부분비물 상태 좋음 => "0"
+    if($outGenitalsSecretion < 2.25) {
+        return $sectionScores;
+    }
+    // 외음부분비물(주의) => "주의"
+    elseif($outGenitalsSecretion < 4.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 외음부분비물(경보) => "경보"
+    elseif(4.5 <= $outGenitalsSecretion) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
 
+// 질병 영역 6 계산 (난산)
+function getDiseaseSectionSix($dystocia)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 난산 상태 좋음 => "0"
+    if($dystocia < 2.75) {
+        return $sectionScores;
+    }
+    // 난산(주의) => "주의"
+    elseif($dystocia < 5.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 난산(경보) => "경보"
+    elseif(5.5 <= $dystocia) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
 
+// 질병 영역 7 계산 (기립불능)
+function getDiseaseSectionSeven($astasia)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 기립불능 상태 좋음 => "0"
+    if($astasia < 2.75) {
+        return $sectionScores;
+    }
+    // 기립불능(주의) => "주의"
+    elseif($astasia < 5.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기립불능(경보) => "경보"
+    elseif(5.5 <= $astasia) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
 
+// 질병 영역 8 계산 (폐사율)
+function getDiseaseSectionEight($fallDead)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 폐사율(주의) => "주의"
+    if (2.25 < $fallDead && $fallDead < 4.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 폐사율(경보) => "경보"
+    elseif (4.5 <= $fallDead) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
+
+// section 1,2,3,4,5,6,7,8 의 care, warning 점수 합산 
+function getCareWarningScore($sectionOneScore, $sectionTwoScore, $sectionThreeScore, $sectionFourScore, $sectionFiveScore, $sectionSixScore, $sectionSevenScore, $sectionEightScore)
+{
+    $careWarningScore = array("care" => 0, "warning" => 0);
+    // "주의" 합산
+    $careWarningScore["care"] = $sectionOneScore["care"] + $sectionTwoScore["care"] + $sectionThreeScore["care"] + $sectionFourScore["care"] + $sectionFiveScore["care"] + $sectionSixScore["care"] + $sectionSevenScore["care"] + $sectionEightScore["care"];
+    
+    // "경보" 합산
+    $careWarningScore["warning"] = $sectionOneScore["warning"] + $sectionTwoScore["warning"] + $sectionThreeScore["warning"] + $sectionFourScore["warning"] + $sectionFiveScore["warning"] + $sectionSixScore["warning"] + $sectionSevenScore["warning"] + $sectionEightScore["warning"];
+
+    return $careWarningScore;
+}
+
+// 질병 종합 점수 계산
+function getDiseaseScore($careWarningScore)
+{
+    $care = $careWarningScore["care"];
+    $warning = $careWarningScore["warning"];
+    $diseaseScore = (100 / 8) * (8 - (($care) + 3 * ($warning)) / 3);
+
+    return round($diseaseScore);
+}
+    
+    
 ?>
 <?php
     //수척 정도 테스트
@@ -576,5 +671,17 @@ function getDiseaseSectionFour($breastInflammation)
     echo "질병3영역 테스트(설사): ".print_r(getDiseaseSectionThree(6.5))."<br>";
     //질병4영역
     echo "질병4영역 테스트(유방염): ".print_r(getDiseaseSectionFour(17.5))."<br>";
+    //질병5영역
+    echo "질병5영역 테스트(외음부분비물): ".print_r(getDiseaseSectionFive(4.5))."<br>";
+    //질병6영역
+    echo "질병6영역 테스트(난산): ".print_r(getDiseaseSectionSix(5.5))."<br>";
+    //질병7영역
+    echo "질병7영역 테스트(기립불능): ".print_r(getDiseaseSectionSeven(5.5))."<br>";
+    //질병8영역
+    echo "질병8영역 테스트(폐사율): ".print_r(getDiseaseSectionEight(4.5))."<br>";
+    //주의 경보 합산
+    echo "주의 경보 합산 테스트: ".print_r(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5)))."<br>";
+    //질병 종합 점수 테스트
+    echo "질병 종합 점수 테스트: ". getDiseaseScore(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5)))."<br>";
     
 ?>
