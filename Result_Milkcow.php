@@ -359,27 +359,222 @@ function getProtocolTwo($restScore, $freeStallActionScore, $warmVentilationScore
 }
 
 
+// protocol 3 (양호한 건강상태(물리/생리적 건강))
+// 상해의 최소화
+// 다리절음 점수 계산
+function getLimpScore($limp)
+{
+    $limpScore = 0;
+    if ($limp == 0) {
+        $limpScore = 100;
+    } else if ($limp <= 1.5) {
+        $limpScore = 90;
+    } else if ($limp <= 3) {
+        $limpScore = 80;
+    } else if ($limp <= 5) {
+        $limpScore = 70;
+    } else if ($limp <= 7) {
+        $limpScore = 60;
+    } else if ($limp <= 10) {
+        $limpScore = 50;
+    } else if ($limp <= 13) {
+        $limpScore = 40;
+    } else if ($limp <= 20) {
+        $limpScore = 30;
+    } else if ($limp <= 31) {
+        $limpScore = 20;
+    } else if ($limp <= 48) { // 젖소 48%, 한육우 49%
+        $limpScore = 10;
+    } else {
+        $limpScore = 0;
+    }
+    return $limpScore;
+}
+
+
+// 외피변형 점수 계산 
+// p.101 어떻게 심한, 경미한 구분 입력을 2개 받아야 하나?
+// 
+function getHairLoss($hairLoss)
+{
+    $hairLossScore = 0;
+    if ($hairLoss == 0) {
+        $hairLossScore = 100;
+    } elseif ($hairLoss <= 4) {
+        $hairLossScore = 90;
+    } elseif ($hairLoss <= 8) {
+        $hairLossScore = 80;
+    } elseif ($hairLoss <= 13) {
+        $hairLossScore = 70;
+    } elseif ($hairLoss <= 18) {
+        $hairLossScore = 60;
+    } elseif ($hairLoss <= 24) {
+        $hairLossScore = 50;
+    } elseif ($hairLoss <= 31) {
+        $hairLossScore = 40;
+    } elseif ($hairLoss <= 40) {
+        $hairLossScore = 30;
+    } elseif ($hairLoss <= 52) {
+        $hairLossScore = 20;
+    } elseif ($hairLoss <= 72) {
+        $hairLossScore = 10;
+    } else {
+        $hairLossScore = 0;
+    }
+    return $hairLossScore;
+}
+
+// 상해의 최소화 종합 점수 계산 p.101
+function getMinimiztionOfInjury($limpScore, $hairLossScore)
+{
+    return ($limpScore * 0.5) + ($hairLossScore * 0.5);
+}
+
+
+// 질병의 최소화
+// 질병 점수 계산 (기침, 비강분비물, 안구분비물, 호흡장애, 설사, 외음부분비물, 우유 내 체세포 수, 폐사율, 난산, 기립불능 소)
+// 질병 영역 1 계산 (비강분비물, 안구분비물 )
+function getDiseaseSectionOne($runnyNose, $ophthalmicSecretion)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 비강분비물 상태 좋음, 안구분비물 상태 좋음 => "0"
+    if ($runnyNose < 5 && $ophthalmicSecretion < 3) {
+        return $sectionScores;
+    }
+    // 비강분비물 상태 좋음, 안구분비물(주의) => "주의"
+    elseif ($runnyNose < 5 && 3 <= $ophthalmicSecretion && $ophthalmicSecretion < 6) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강분비물(주의), 안구분비물 상태 좋음 => "주의"
+    elseif (5 <= $runnyNose && $runnyNose < 10 && $ophthalmicSecretion < 3) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강분비물(주의), 안구분비물(주의) => "주의"
+    elseif (5 <= $runnyNose && $runnyNose < 10 && 3 <= $ophthalmicSecretion && $ophthalmicSecretion < 6) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강, 안구분비물 중 1개라도 "경보" => "경보"
+    elseif (10 <= $runnyNose || 6 <= $ophthalmicSecretion) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
+// 문제점:
+// 상태가 좋은데도 "주의"를 줘버리면 100점이 나올 수 없는 구조.
+// "주의" 1개, "경보" 1개가 입력됐을 때 "경보"가 되도록 출력되어야 함.
+// 경보 한계점 "미만" => "주의", 경보 한계점 "초과" => "경보".
+// 정작 경보 한계점에 대한 "주의" 또는 "경보" 표시가 없음.
+// 경계점 5%, 3%, 10%, 6%는 "이상"으로 간주하여 작성됨.
+
+
+// 질병 영역 2 계산 (기침, 호흡장애)
+function getDiseaseSectionTwo($cough, $numOfSample, $respiratoryFailure)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    $coughScore = ($cough / $numOfSample) * 100;
+    // 기침 상태 좋음, 호흡장애 상태 좋음 => "0"
+    if($cough < 3 && $respiratoryFailure < 3.25) {
+        return $sectionScores;
+    }
+    // 기침 상태 좋음, 호흡장애(주의) => "주의"
+    elseif($cough < 3 && 3.25 <= $respiratoryFailure && $respiratoryFailure < 6.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기침(주의), 호흡장애 상태 좋음 => "주의"
+    elseif(3 <= $cough && $cough < 6 && $respiratoryFailure < 3.25) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기침(주의), 호흡장애(주의) => "주의"
+    elseif(3 <= $cough && $cough < 6 && 3.25 <= $respiratoryFailure && $respiratoryFailure < 6.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기침, 호흡장애 중 1개라도 "경보" =>
+    elseif(6 <= $cough || 6.5 <= $respiratoryFailure) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    
+    return $sectionScores;
+}
+
+
+// 질병 영역 3 계산 (설사)
+function getDiseaseSectionThree($diarrhea)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    //설사 상태 좋음 => "0"
+    if($diarrhea < 3.25) {
+        return $sectionScores;
+    }
+    //설사(주의) => "주의"
+    elseif($diarrhea < 6.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    //설사(경보) => "경보"
+    elseif(6.5 <= $diarrhea) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
+
+
+// 질병 영역 4 계산 (유방염)
+function getDiseaseSectionFour($breastInflammation)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 상태 좋음
+    if($breastInflammation < 8.75) {
+        return $sectionScores;
+    }
+    elseif($breastInflammation < 17.5) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    elseif(17.5 <= $breastInflammation) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
+
+
+
+
 ?>
 <?php
     //수척 정도 테스트
-    echo "수척 정도 테스트: ". getPoorScore(10);
+    echo "수척 정도 테스트: ". getPoorScore(10)."<br>";
     //음수조 테스트
-    echo "음수조 테스트: ". getPoorScore(0, 0, 0);
+    echo "음수조 테스트: ". getPoorScore(0, 0, 0)."<br>";
     //프로토콜1 계산
-    echo "protocol1: ". getProtocolOne(60, 100);
+    echo "protocol1: ". getProtocolOne(60, 100)."<br>";
+    echo "-----------------------<br>";
     //프리스톨 우사 테스트
-    echo "프리스톨 우사 테스트: ". getFreeStallScore(1, 1, 0, 1, 0, 1, 0);
+    echo "프리스톨 우사 테스트: ". getFreeStallScore(1, 1, 0, 1, 0, 1, 0)."<br>";
     //일반 우사 테스트
-    echo "일반 우사 테스트: ". getRestScore(1, 1, 1, 0);
+    echo "일반 우사 테스트: ". getRestScore(1, 1, 1, 0)."<br>";
     //혹서기 테스트(둘다)
-    echo "혹서기 테스트: ". getSummerRestScore(1, 1, 1);
+    echo "혹서기 테스트: ". getSummerRestScore(1, 1, 1)."<br>";
     //혹한기(송아지제외:성우만)
-    echo "혹한기 테스트(송아지제외:성우만): ". getWinterRestScore(1, 1);
+    echo "혹한기 테스트(송아지제외:성우만): ". getWinterRestScore(1, 1)."<br>";
     //혹한기(송아지용)
-    echo "혹한기 테스트(포유송아지용): ". getWinterCalfRestScore(1, 1, 1);
+    echo "혹한기 테스트(포유송아지용): ". getWinterCalfRestScore(1, 1, 1)."<br>";
     //편안한 열환경과 환기 점수 계산
-    echo "편안한 열환경과 환기 테스트: ". getWarmVentilationScore(60, 60, 50, 3);
+    echo "편안한 열환경과 환기 테스트: ". getWarmVentilationScore(60, 60, 50, 3)."<br>";
     //프로토콜2 계산
-    echo "protocol2(프리스톨우사): ". getProtocolTwo(60, 70, 0, 3);
-    echo "protocol2(일반우사): ". getProtocolTwo(60, 0, 80, 3);
+    echo "protocol2(프리스톨우사): ". getProtocolTwo(60, 70, 0, 3)."<br>";
+    echo "protocol2(일반우사): ". getProtocolTwo(60, 0, 80, 3)."<br>";
+    echo "-----------------------<br>";
+    //다리절음 테스트
+    echo "다리절음 테스트: ". getLimpScore(40)."<br>";
+    //외피변형 테스트
+    echo "외피변형 테스트: ". getHairLoss(30)."<br>";
+    //상해의 최소화
+    echo "상해의 최소화 테스트: ".getMinimiztionOfInjury(50, 40)."<br>";
+    //질병1영역
+    echo "질병1영역 테스트(비강,안구분비물): ".print_r(getDiseaseSectionOne(10, 6))."<br>";
+    //질병2영역
+    echo "질병2영역 테스트(기침,호흡장애): ".print_r(getDiseaseSectionTwo(6.5, 100, 6.5))."<br>";
+    //질병3영역
+    echo "질병3영역 테스트(설사): ".print_r(getDiseaseSectionThree(6.5))."<br>";
+    //질병4영역
+    echo "질병4영역 테스트(유방염): ".print_r(getDiseaseSectionFour(17.5))."<br>";
+    
 ?>
