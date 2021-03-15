@@ -321,25 +321,36 @@ function getMinimiztionOfInjury($limpScore, $hairLossScore)
 }
 
 // 질병 점수 계산 (기침, 비강분비물, 안구분비물, 호흡장애, 설사, 반추위팽창, 폐사율)
-// 질병 영역 1 계산 (기침, 비강분비물 )
-function getDiseaseSectionOne($runnyNose, $ophthalmicSecretion)
-{
-    $sectionScores = array("care" => 0, "warning" => 0);
-    if (5 < $runnyNose && $runnyNose <= 10 || 3 < $ophthalmicSecretion && $ophthalmicSecretion <= 6) {
-        $sectionScores["care"] = $sectionScores["care"] + 1;
-    } elseif (10 < $runnyNose || 6 < $ophthalmicSecretion) {
-        $sectionScores["warning"] = $sectionScores["warning"] + 1;
-    }
-    return $sectionScores;
-}
+// 문제점:
+// 상태가 좋은데도 "주의"를 줘버리면 100점이 나올 수 없는 구조.
+// "주의" 1개, "경보" 1개가 입력됐을 때 "경보"가 되도록 출력되어야 함.
+// 경보 한계점 "미만" => "주의", 경보 한계점 "초과" => "경보".
+// 정작 경보 한계점에 대한 "주의" 또는 "경보" 표시가 없음.
+// 경계점 5%, 3%, 10%, 6%는 "이상"으로 간주하여 작성됨.
+
 // 질병 영역 2 계산 (기침, 호흡장애)
 function getDiseaseSectionTwo($cough, $numOfSample, $respiratoryFailure)
 {
     $sectionScores = array("care" => 0, "warning" => 0);
     $coughScore = ($cough / $numOfSample) * 100;
-    if (4 < $coughScore && $coughScore <= 8 || 5 < $respiratoryFailure && $respiratoryFailure <= 10) {
+    // 기침 상태 좋음, 호흡장애 상태 좋음 => "0"
+    if ($coughScore < 4 && $respiratoryFailure < 5) {
+        return $sectionScores;
+    }
+    // 기침 상태 좋음, 호흡장애(주의) => "주의"
+    elseif ($coughScore < 4 && 5 <= $respiratoryFailure && $respiratoryFailure < 10) {
         $sectionScores["care"] = $sectionScores["care"] + 1;
-    } elseif (8 < $coughScore || 10 < $respiratoryFailure) {
+    }
+    // 기침(주의), 호흡장애 상태 좋음 => "주의"
+    elseif (4 <= $coughScore && $coughScore < 8 && $respiratoryFailure < 4) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기침(주의), 호흡장애(주의) => "주의"
+    elseif (4 <= $coughScore && $coughScore < 8 && 5 <= $respiratoryFailure && $respiratoryFailure < 10) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 기침, 호흡장애 중 1개라도 "경보" => "경보"
+    elseif (8 <= $coughScore || 10 <= $respiratoryFailure) {
         $sectionScores["warning"] = $sectionScores["warning"] + 1;
     }
     return $sectionScores;
@@ -348,9 +359,24 @@ function getDiseaseSectionTwo($cough, $numOfSample, $respiratoryFailure)
 function getDiseaseSectionThree($ruminant, $diarrhea)
 {
     $sectionScores = array("care" => 0, "warning" => 0);
-    if (5 < $ruminant && $ruminant <= 10 || 3 < $diarrhea && $diarrhea <= 6) {
+    // 반추위 팽창, 설사 상태 좋음 => "0"
+    if ($ruminant < 5 && $diarrhea < 3) {
+        return $sectionScores;
+    }
+    // 반추위 팽창 상태 좋음, 설사(주의) => "주의"
+    elseif ($ruminant < 5 && 3 <= $diarrhea && $diarrhea < 6) {
         $sectionScores["care"] = $sectionScores["care"] + 1;
-    } elseif (10 < $ruminant || 6 < $diarrhea) {
+    }
+    // 반추위 팽창(주의), 설사 좋음 => "주의"
+    elseif (5 <= $ruminant && $ruminant < 10 && $diarrhea < 3) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 반추위 팽창(주의), 설사(주의) => "주의"
+    elseif (5 <= $ruminant && $ruminant < 10 && 3 <= $diarrhea && $diarrhea < 6) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 반추위 팽창 ,설사 중 1개라도 "경보" => "경보"
+    elseif (10 <= $ruminant || 6 <= $diarrhea) {
         $sectionScores["warning"] = $sectionScores["warning"] + 1;
     }
     return $sectionScores;
@@ -359,9 +385,14 @@ function getDiseaseSectionThree($ruminant, $diarrhea)
 function getDiseaseSectionFour($fallDead)
 {
     $sectionScores = array("care" => 0, "warning" => 0);
-    if (2 < $fallDead && $fallDead <= 4) {
+    // 폐사율 상태 좋음 => 0
+    if ($fallDead < 2)
+        return $sectionScores;
+    // 폐사율 상태 주의
+    if (2 <= $fallDead && $fallDead < 4) {
         $sectionScores["care"] = $sectionScores["care"] + 1;
-    } elseif (4 < $fallDead) {
+        // 폐사율 상태 경보  
+    } elseif (4 <= $fallDead) {
         $sectionScores["warning"] = $sectionScores["warning"] + 1;
     }
     return $sectionScores;
@@ -429,8 +460,8 @@ function getHornRemovalScore($horn, $hornAnesthesia, $hornPainkiller)
         }
         // 마취제 미사용
         else {
-               // 사후 진통제만 사용했을 경우 (누락 부분)
-            if ($hornPainkiller == 1) {         
+            // 사후 진통제만 사용했을 경우 (누락 부분)
+            if ($hornPainkiller == 1) {
                 $hornRemovalScore = 41;
             } else {
                 $hornRemovalScore = 20;
@@ -458,59 +489,60 @@ function getHornRemovalScore($horn, $hornAnesthesia, $hornPainkiller)
 }
 // 거세 점수 계산 
 // **프로토콜이랑 맞추느라 조건문 순서 바꿔서 안드로이드도 추가 변경 필요함**
-function getCastrationScore($castration,$castrationAnesthesia,$castrationPainkiller){
+function getCastrationScore($castration, $castrationAnesthesia, $castrationPainkiller)
+{
     $castrationScore = 0;
     // 거세 안함 
-    if($castration == 1){
+    if ($castration == 1) {
         $castrationScore  = 100;
     }
     // 외과적 수술
-    elseif($castration == 2){
-        if($castrationAnesthesia == 1){
-            if($castrationPainkiller == 1){
+    elseif ($castration == 2) {
+        if ($castrationAnesthesia == 1) {
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 34;
-            } else{
+            } else {
                 $castrationScore = 21;
             }
         } else {
             //"사후진통제"만 사용했을 경우 (누락 부분)
-            if($castrationPainkiller == 1){
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 20;
-            }else {
+            } else {
                 $castrationScore = 0;
             }
         }
     }
     // 고무링
-    elseif($castration == 3){
-        if($castrationAnesthesia == 1){
-            if($castrationPainkiller == 1){
+    elseif ($castration == 3) {
+        if ($castrationAnesthesia == 1) {
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 21;
-            } else{
+            } else {
                 $castrationScore = 17;
             }
         } else {
             //"사후진통제"만 사용했을 경우 (누락 부분)
-            if($castrationPainkiller == 1){
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 17;
-            }else {
+            } else {
                 $castrationScore = 2;
             }
         }
     }
     // Burdizzo 
-    elseif($castration == 4){
-        if($castrationAnesthesia == 1){
-            if($castrationPainkiller == 1){
+    elseif ($castration == 4) {
+        if ($castrationAnesthesia == 1) {
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 35;
-            } else{
+            } else {
                 $castrationScore = 21;
             }
         } else {
             //"사후진통제"만 사용했을 경우 (누락 부분)
-            if($castrationPainkiller == 1){
+            if ($castrationPainkiller == 1) {
                 $castrationScore = 19;
-            }else {
+            } else {
                 $castrationScore = 0;
             }
         }
@@ -519,12 +551,224 @@ function getCastrationScore($castration,$castrationAnesthesia,$castrationPainkil
 }
 
 // 고통의 최소화(제각+거세) 종합 점수 계산
-function getMinimiztionOfPainScore($hornRemovalScore,$castrationScore){
-    return ($hornRemovalScore*0.7)+($castrationScore*0.3);
+function getMinimiztionOfPainScore($hornRemovalScore, $castrationScore)
+{
+    return ($hornRemovalScore * 0.7) + ($castrationScore * 0.3);
 }
 // protocol 3 종합 점수 계산
-function getProtocolThree($minimizationOfInjuryScore,$diseaseScore,$minimizationOfPainScore) {
-    return ($minimizationOfInjuryScore*0.35) + ($diseaseScore *0.4) + ($minimizationOfPainScore *0.25);
+function getProtocolThree($minimizationOfInjuryScore, $diseaseScore, $minimizationOfPainScore)
+{
+    return ($minimizationOfInjuryScore * 0.35) + ($diseaseScore * 0.4) + ($minimizationOfPainScore * 0.25);
+}
+// 사회적 행동의 표현(투쟁행동, 화합행동)" 종합 기준점수
+function getStruggleScore($struggle, $harmony)
+{
+    // 투쟁행동 비율 계산
+    $struggleRatio = ($struggle / ($struggle + $harmony)) * 100;
+    $struggleScore = 0;
+    // 투쟁행동빈도 0.5 이하일때
+    if ($struggle <= 0.5) {
+        if ($struggleRatio > 100) {
+            return $struggleScore = -1;
+        }
+        if ($struggleRatio == 100) {
+            $struggleScore = 58;
+        } else if ($struggleRatio >= 90) {
+            $struggleScore = 62;
+        } else if ($struggleRatio >= 80) {
+            $struggleScore = 67;
+        } else if ($struggleRatio >= 70) {
+            $struggleScore = 73;
+        } else if ($struggleRatio >= 60) {
+            $struggleScore = 78;
+        } else if ($struggleRatio >= 50) {
+            $struggleScore = 83;
+        } else if ($struggleRatio >= 40) {
+            $struggleScore = 87;
+        } else if ($struggleRatio >= 30) {
+            $struggleScore = 91;
+        } else if ($struggleRatio >= 20) {
+            $struggleScore = 93;
+        } else if ($struggleRatio >= 10) {
+            $struggleScore = 95;
+        } else {
+            $struggleScore = 100;
+        }
+        return $struggleScore;
+    } // 투쟁행동빈도 0.5 초과, 1.5 이하일때 
+    else if (0.5 < $struggle && $struggle <= 1.5) {
+        if ($struggleRatio > 100) {
+            return $struggleScore = -1;
+        }
+        if ($struggleRatio == 100) {
+            $struggleScore = 34;
+        } else if ($struggleRatio >= 90) {
+            $struggleScore = 41;
+        } else if ($struggleRatio >= 80) {
+            $struggleScore = 47;
+        } else if ($struggleRatio >= 70) {
+            $struggleScore = 52;
+        } else if ($struggleRatio >= 60) {
+            $struggleScore = 57;
+        } else if ($struggleRatio >= 50) {
+            $struggleScore = 61;
+        } else if ($struggleRatio >= 40) {
+            $struggleScore = 65;
+        } else if ($struggleRatio >= 30) {
+            $struggleScore = 67;
+        } else if ($struggleRatio >= 20) {
+            $struggleScore = 69;
+        } else if ($struggleRatio >= 10) {
+            $struggleScore = 72;
+        } else {
+            $struggleScore = 100;
+        }
+    } // 투쟁행동빈도 1.5 초과, 3 이하일때 
+    else if (1.5 < $struggle && $struggle <= 3) {
+        if ($struggleRatio > 100) {
+            return $struggleScore = -1;
+        }
+        if ($struggleRatio == 100) {
+            $struggleScore = 25;
+        } else if ($struggleRatio >= 90) {
+            $struggleScore = 30;
+        } else if ($struggleRatio >= 80) {
+            $struggleScore = 35;
+        } else if ($struggleRatio >= 70) {
+            $struggleScore = 39;
+        } else if ($struggleRatio >= 60) {
+            $struggleScore = 42;
+        } else if ($struggleRatio >= 50) {
+            $struggleScore = 45;
+        } else if ($struggleRatio >= 40) {
+            $struggleScore = 47;
+        } else if ($struggleRatio >= 30) {
+            $struggleScore = 48;
+        } else if ($struggleRatio >= 20) {
+            $struggleScore = 49;
+        } else if ($struggleRatio >= 10) {
+            $struggleScore = 52;
+        } else {
+            $struggleScore = 100;
+        }
+        // 40 % 점수에서 왜 내려가는 지?
+    } // 투쟁행동빈도 3 초과, 8 이하일때 
+    else if (3 < $struggle && $struggle <= 8) {
+        if ($struggleRatio > 100) {
+            return $struggleScore = -1;
+        }
+        if ($struggleRatio == 100) {
+            $struggleScore = 8;
+        } else if ($struggleRatio >= 90) {
+            $struggleScore = 13;
+        } else if ($struggleRatio >= 80) {
+            $struggleScore = 16;
+        } else if ($struggleRatio >= 70) {
+            $struggleScore = 19;
+        } else if ($struggleRatio >= 60) {
+            $struggleScore = 22;
+        } else if ($struggleRatio >= 50) {
+            $struggleScore = 24;
+        } else if ($struggleRatio >= 40) {
+            // 왜 여기서 점수가 내려가는지?
+            $struggleScore = 20;
+        } else if ($struggleRatio >= 30) {
+            $struggleScore = 27;
+        } else if ($struggleRatio >= 20) {
+            $struggleScore = 28;
+        } else if ($struggleRatio >= 10) {
+            $struggleScore = 30;
+        } else {
+            $struggleScore = 100;
+        }
+    } // 투쟁행동빈도 8 초과일때
+    else if (8 < $struggle) {
+        if ($struggleRatio > 100) {
+            return $struggleScore = -1;
+        }
+        if ($struggleRatio == 100) {
+            $struggleScore = 0;
+        } else if ($struggleRatio >= 90) {
+            $struggleScore = 3;
+        } else if ($struggleRatio >= 80) {
+            $struggleScore = 3;
+        } else if ($struggleRatio >= 70) {
+            $struggleScore = 4;
+        } else if ($struggleRatio >= 60) {
+            $struggleScore = 5;
+        } else if ($struggleRatio >= 50) {
+            $struggleScore = 6;
+        } else if ($struggleRatio >= 40) {
+            $struggleScore = 6;
+        } else if ($struggleRatio >= 30) {
+            $struggleScore = 6;
+        } else if ($struggleRatio >= 20) {
+            $struggleScore = 7;
+        } else if ($struggleRatio >= 10) {
+            $struggleScore = 8;
+        } else {
+            $struggleScore = 100;
+        }
+    }
+}
+// 편안한 사람-가축 관계(회피거리) 종합 점수 계산
+function untouchableCowScore($touchNear, $touchFar, $touchImpossibility)
+{
+    // 만질 수 없는 소의 비율
+    $untouchableCow = ($touchNear + (3 * $touchFar) + (5 * $touchImpossibility)) / 5;
+    $untouchableCowScore = 0;
+    if ($untouchableCow == 0) {
+        $untouchableCowScore = 100;
+    } elseif (1 <= $untouchableCow   && $untouchableCow <= 7) {
+        $untouchableCowScore = 95;
+    } elseif (8 <= $untouchableCow   && $untouchableCow <= 13) {
+        $untouchableCowScore = 90;
+    } elseif (14 <= $untouchableCow   && $untouchableCow <= 18) {
+        $untouchableCowScore = 85;
+    } elseif (19 <= $untouchableCow   && $untouchableCow <= 22) {
+        $untouchableCowScore = 80;
+    } elseif (23 <= $untouchableCow   && $untouchableCow <= 26) {
+        $untouchableCowScore = 75;
+    } elseif (27 <= $untouchableCow   && $untouchableCow <= 29) {
+        $untouchableCowScore = 70;
+    } elseif (30 <= $untouchableCow   && $untouchableCow <= 32) {
+        $untouchableCowScore = 65;
+    } elseif (33 <= $untouchableCow   && $untouchableCow <= 35) {
+        $untouchableCowScore = 60;
+    } elseif (36 <= $untouchableCow   && $untouchableCow <= 38) {
+        $untouchableCowScore = 55;
+    } elseif (39 <= $untouchableCow   && $untouchableCow <= 41) {
+        $untouchableCowScore = 50;
+    } elseif (42 <= $untouchableCow   && $untouchableCow <= 45) {
+        $untouchableCowScore = 45;
+    } elseif (46 <= $untouchableCow   && $untouchableCow <= 49) {
+        $untouchableCowScore = 40;
+    } elseif (50 <= $untouchableCow   && $untouchableCow <= 54) {
+        $untouchableCowScore = 35;
+    } elseif (55 <= $untouchableCow   && $untouchableCow <= 59) {
+        $untouchableCowScore = 30;
+    } elseif (60 <= $untouchableCow   && $untouchableCow <= 66) {
+        $untouchableCowScore = 25;
+    } elseif (67 <= $untouchableCow   && $untouchableCow <= 73) {
+        $untouchableCowScore = 20;
+    } elseif (74 <= $untouchableCow   && $untouchableCow <= 80) {
+        $untouchableCowScore = 15;
+    } elseif (86 <= $untouchableCow   && $untouchableCow <= 91) {
+        $untouchableCowScore = 10;
+    } elseif (92 <= $untouchableCow   && $untouchableCow <= 92) {
+        $untouchableCowScore = 5;
+    } elseif (94 <= $untouchableCow   && $untouchableCow <= 100) {
+        $untouchableCowScore = 0;
+    }
+    return $untouchableCowScore;
+}
+// protocol 4 종합 점수 계산
+function getProtocolFour($struggleScore,$untouchableCowScore){
+    return ($struggleScore*0.65)+($untouchableCowScore*0.35);
 }
 
+// protocol 1,2,3,4 점수 합산
+function getTotalScore($protocolScoreOne,$protocolScoreTow,$protocolScoreThree,$protocolScoreFour){
+    return $protocolScoreOne+$protocolScoreTow+$protocolScoreThree+$protocolScoreFour;
+}
 ?>
