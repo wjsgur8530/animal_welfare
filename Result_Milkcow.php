@@ -608,6 +608,7 @@ function getDiseaseSectionEight($fallDead)
     return $sectionScores;
 }
 
+
 // section 1,2,3,4,5,6,7,8 의 care, warning 점수 합산 
 function getCareWarningScore($sectionOneScore, $sectionTwoScore, $sectionThreeScore, $sectionFourScore, $sectionFiveScore, $sectionSixScore, $sectionSevenScore, $sectionEightScore)
 {
@@ -630,8 +631,201 @@ function getDiseaseScore($careWarningScore)
 
     return round($diseaseScore);
 }
+
+// 해당관리로 인한 고통
+// 제각 점수 계산
+// 누락된 부분이 "사후진통제"만 사용했을 경우
+function getHornRemovalScore($horn, $hornAnesthesia, $hornPainkiller)
+{
+    $hornRemovalScore = 0;
+    // 제각안함
+    if ($horn == 1) {
+        $hornRemovalScore = 100;
+    } // 송아지 제각 가열 방식
+    elseif ($horn == 2) {
+        // 마취제 사용
+        if ($hornAnesthesia == 1) {
+            // 사후진통제 사용
+            if ($hornPainkiller == 1) {
+                $hornRemovalScore = 75; //마취, 진통 둘다
+            } else {
+                $hornRemovalScore = 52; //마취
+            }
+        }
+        // 마취제 미사용
+        else {
+            if ($hornPainkiller == 1) {
+                // 사후 진통제만 사용했을 경우 (누락 부분)
+                $hornRemovalScore = 49; //사후 진통제
+            }
+            // 처치 없음
+            else {
+                $hornRemovalScore = 28; //처치 없음
+            }
+        }
+    }
+    // 송아지 제각 화학적 방식
+    elseif ($horn == 3) {
+        // 마취제 사용
+        if ($hornAnesthesia == 1) {
+            // 사후진통제 사용
+            if ($hornPainkiller == 1) {
+                $hornRemovalScore = 58; //마취, 진통 둘다
+            } else {
+                $hornRemovalScore = 39; //마취
+            }
+        }
+        // 마취제 미사용
+        else {
+            // 사후 진통제만 사용했을 경우 (누락 부분)
+            if ($hornPainkiller == 1) {
+                $hornRemovalScore = 41; //사후 진통제
+            } else {
+                $hornRemovalScore = 20; //처치 없음
+            }
+        }
+    }
+    // 성우 제각
+    // 송아지는 사후진통제만 했을 때 점수가 마취제 점수보다 높은데 왜 성우는 더 높지 마취제가
+    else {
+        if ($hornAnesthesia == 1) {
+            if ($hornPainkiller == 1) {
+                $hornRemovalScore = 27; //마취, 진통 둘다
+            } else {
+                $hornRemovalScore = 17; //마취
+            }
+        } else {
+            if ($hornPainkiller == 1) {
+                $hornRemovalScore = 16; //사후 진통제
+            } else {
+                $hornRemovalScore = 2; //처치 없음
+            }
+        }
+    }
+    return $hornRemovalScore;
+}
+
+// protocol3 종합 점수 계산
+// 상해의 최소화, 질병의 최소화, 해당관리로 인한 고통 최소화 점수 계산
+function getProtocolThree($minimizationOfInjuryScore, $diseaseScore, $minimizationOfPainScore)
+{
+    return ($minimizationOfInjuryScore * 0.3) + ($diseaseScore * 0.5)+ ($minimizationOfPainScore * 0.2);
+}
+
+
+// 적절한 행동(정신적 건강상태)
+// 사회적 행동의 표현(투쟁행동)
+// 투쟁 행동(머리박치기, 투쟁행동빈도(머리박치기 제외))
+function getStruggleScore($headButt, $struggle)
+{
+    // 사회적행동 지수
+    $socialBehavior = 100 * ((43.8) - (4 * $headButt + 11 * $struggle)) / 43.8;
     
+    // 투쟁행동 비율 계산
+    // 투쟁행동 지수: 100 - [100 X [{43.8} - (4 X (머리박치기) + 11 X (머리박치기 제외 투쟁행동))] / 43.8
+    // 100 - 사회적행동 지수
+    $struggleRatio = 100 - $socialBehavior;
+    $struggleScore = 0;
     
+    if($struggleRatio == 0) {
+        $struggleScore = 100;
+    }
+    else if($struggleRatio <= 4 ) {
+        $struggleScore = 90;
+    }
+    else if($struggleRatio <= 9 ) {
+        $struggleScore = 80;
+    }
+    else if($struggleRatio <= 14 ) {
+        $struggleScore = 70;
+    }
+    else if($struggleRatio <= 19 ) {
+        $struggleScore = 60;
+    }
+    else if($struggleRatio <= 25 ) {
+        $struggleScore = 50;
+    }
+    else if($struggleRatio <= 32 ) {
+        $struggleScore = 40;
+    }
+    else if($struggleRatio <= 41 ) {
+        $struggleScore = 30;
+    }
+    else if($struggleRatio <= 53 ) {
+        $struggleScore = 20;
+    }
+    else if($struggleRatio <= 71 ) {
+        $struggleScore = 10;
+    }
+    else if($struggleRatio <= 100 ) {
+        $struggleScore = 0;
+    }
+    return $struggleScore;
+} // *투쟁 행동 프로토콜은 다시 봐야할 듯 값이 정확치 않음.
+
+
+// 편안한 사람-가축 관계(회피거리) 종합 점수 계산
+function untouchableCowScore($touchNear, $touchFar, $touchImpossibility)
+{
+    // 만질 수 없는 소의 비율
+    $untouchableCow = ((3 * $touchNear) + (11 * $touchFar) + (26 * $touchImpossibility)) / 26;
+    $untouchableCowScore = 0;
+    if ($untouchableCow == 0) {
+        $untouchableCowScore = 100;
+    } elseif (1 <= $untouchableCow   && $untouchableCow <= 2) {
+        $untouchableCowScore = 95;
+    } elseif (3 <= $untouchableCow   && $untouchableCow <= 5) {
+        $untouchableCowScore = 90;
+    } elseif (6 <= $untouchableCow   && $untouchableCow <= 7) {
+        $untouchableCowScore = 85;
+    } elseif (8 <= $untouchableCow   && $untouchableCow <= 9) {
+        $untouchableCowScore = 80;
+    } elseif (10 <= $untouchableCow   && $untouchableCow <= 11) {
+        $untouchableCowScore = 75;
+    } elseif (12 <= $untouchableCow   && $untouchableCow <= 14) {
+        $untouchableCowScore = 70;
+    } elseif (15 <= $untouchableCow   && $untouchableCow <= 17) {
+        $untouchableCowScore = 65;
+    } elseif (18 <= $untouchableCow   && $untouchableCow <= 19) {
+        $untouchableCowScore = 60;
+    } elseif (20 <= $untouchableCow   && $untouchableCow <= 22) {
+        $untouchableCowScore = 55;
+    } elseif (23 <= $untouchableCow   && $untouchableCow <= 25) {
+        $untouchableCowScore = 50;
+    } elseif (26 <= $untouchableCow   && $untouchableCow <= 28) {
+        $untouchableCowScore = 45;
+    } elseif (29 <= $untouchableCow   && $untouchableCow <= 32) {
+        $untouchableCowScore = 40;
+    } elseif (33 <= $untouchableCow   && $untouchableCow <= 36) {
+        $untouchableCowScore = 35;
+    } elseif (37 <= $untouchableCow   && $untouchableCow <= 41) {
+        $untouchableCowScore = 30;
+    } elseif (42 <= $untouchableCow   && $untouchableCow <= 46) {
+        $untouchableCowScore = 25;
+    } elseif (47 <= $untouchableCow   && $untouchableCow <= 52) {
+        $untouchableCowScore = 20;
+    } elseif (53 <= $untouchableCow   && $untouchableCow <= 60) {
+        $untouchableCowScore = 15;
+    } elseif (61 <= $untouchableCow   && $untouchableCow <= 71) {
+        $untouchableCowScore = 10;
+    } elseif (72 <= $untouchableCow   && $untouchableCow <= 86) {
+        $untouchableCowScore = 5;
+    } elseif (87 <= $untouchableCow   && $untouchableCow <= 100) {
+        $untouchableCowScore = 0;
+    }
+    return $untouchableCowScore;
+}
+
+// protocol 4 종합 점수 계산
+function getProtocolFour($struggleScore, $untouchableCowScore){
+    return ($struggleScore * 0.55)+($untouchableCowScore * 0.45);
+}
+
+// protocol 1,2,3,4 점수 합산
+function getTotalScore($protocolScoreOne, $protocolScoreTow, $protocolScoreThree, $protocolScoreFour){
+    return $protocolScoreOne + $protocolScoreTow + $protocolScoreThree + $protocolScoreFour;
+}
+
 ?>
 <?php
     //수척 정도 테스트
@@ -683,5 +877,17 @@ function getDiseaseScore($careWarningScore)
     echo "주의 경보 합산 테스트: ".print_r(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5)))."<br>";
     //질병 종합 점수 테스트
     echo "질병 종합 점수 테스트: ". getDiseaseScore(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5)))."<br>";
-    
+    //제각 점수 테스트
+    echo "제각 점수 테스트: ".getHornRemovalScore(3, 1, 1)."<br>";
+    //프로토콜3 계산
+    echo "protocol3: ".getProtocolThree(getMinimiztionOfInjury(50, 40), getDiseaseScore(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5))), getHornRemovalScore(3, 1, 1))."<br>";
+    echo "-----------------------<br>";
+    //투쟁행동 점수 테스트
+    echo "투쟁행동 점수 테스트: ".getStruggleScore(0.1, 0.1)."<br>";
+    //회피거리 점수 테스트
+    echo "회피거리 점수 테스트: ".untouchableCowScore(10, 10, 10)."<br>";
+    //프로토콜 4 계산
+    echo "protocol4: ".getProtocolFour(getStruggleScore(0.1, 0.1), untouchableCowScore(10, 10, 10))."<br>";
+    //전체 종합 점수
+    echo "전체 종합 점수: ".getTotalScore(getProtocolOne(60, 100), getProtocolTwo(60, 70, 0, 3), getProtocolThree(getMinimiztionOfInjury(50, 40), getDiseaseScore(getCareWarningScore(getDiseaseSectionOne(10, 6), getDiseaseSectionTwo(6.5, 100, 6.5), getDiseaseSectionThree(6.5), getDiseaseSectionFour(17.5), getDiseaseSectionFive(4.5), getDiseaseSectionSix(5.5), getDiseaseSectionSeven(5.5), getDiseaseSectionEight(4.5))), getHornRemovalScore(3, 1, 1)), getProtocolFour(getStruggleScore(0.1, 0.1), untouchableCowScore(10, 10, 10)))."<br>";
 ?>
