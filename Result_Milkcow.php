@@ -86,18 +86,18 @@ function getProtocolOne($poorScore, $waterScore)
 
 // 프로토콜 2 (편한 축사 환경)
 // 편한 축사 환경 점수 계산
-function getFreeStallScore($freeStallNum, $sitCollision, $freeStallAreaOutCollision, $sitActionTime, $outwardHygieneLeg, $outwardHygieneBack, $outwardHygieneBreast)
+function getFreeStallScore($freestallNum, $sitCollision, $freeStallAreaOutCollision, $sitActionTime, $outwardHygieneLeg, $outwardHygieneBack, $outwardHygieneBreast)
 {
     $freeStallActionScore = 0;
     // 프리스톨 수 점수 계산
-    if ($freeStallNum == 0) {
-        $freeStallNum = 100;
+    if ($freestallNum == 0) {
+        $freestallNum = 100;
     }
-    else if ($freeStallNum == 1) {
-        $freeStallNum = 70;
+    else if ($freestallNum == 1) {
+        $freestallNum = 70;
     }
     else {
-        $freeStallNum = 40;
+        $freestallNum = 40;
     }
     
     // 앉기 시 충돌 계산
@@ -362,7 +362,7 @@ function getProtocolTwo($restScore, $freeStallActionScore, $warmVentilationScore
 // protocol 3 (양호한 건강상태(물리/생리적 건강))
 // 상해의 최소화
 // 다리절음 점수 계산
-function getLimpScore($limp)
+function getLimpScore($limp) // 경미한, 심각한으로 2개 써야함.
 {
     $limpScore = 0;
     if ($limp == 0) {
