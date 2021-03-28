@@ -255,7 +255,7 @@ function getProtocolTwo($restScore, $warmVentilationScore)
 }
 
 // protocol 3 ( 양호한 건강상태 )
-// 다리절음 점수 계산
+// 다리절음 점수 계산 경미한/ 심한
 function getLimpScore($limp)
 {
     $limpScore = 0;
@@ -285,6 +285,7 @@ function getLimpScore($limp)
     return $limpScore;
 }
 // 외피변형 점수 계산 
+// 심각한 / 경미한 수정
 // p.64  세부 기준점수표에 대한 게산식 없음
 function getHairLoss($hairLoss)
 {
@@ -327,6 +328,35 @@ function getMinimiztionOfInjury($limpScore, $hairLossScore)
 // 경보 한계점 "미만" => "주의", 경보 한계점 "초과" => "경보".
 // 정작 경보 한계점에 대한 "주의" 또는 "경보" 표시가 없음.
 // 경계점 5%, 3%, 10%, 6%는 "이상"으로 간주하여 작성됨.
+function getDiseaseSectionOne($runnyNose, $ophthalmicSecretion)
+{
+    $sectionScores = array("care" => 0, "warning" => 0);
+    // 비강분비물 상태 좋음, 안구분비물 상태 좋음 => "0"
+    if ($runnyNose < 5 && $ophthalmicSecretion < 3) {
+        return $sectionScores;
+    }
+    // 비강분비물 상태 좋음, 안구분비물(주의) => "주의"
+    elseif ($runnyNose < 5 && 3 <= $ophthalmicSecretion && $ophthalmicSecretion < 6) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강분비물(주의), 안구분비물 상태 좋음 => "주의"
+    elseif (5 <= $runnyNose && $runnyNose < 10 && $ophthalmicSecretion < 3) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강분비물(주의), 안구분비물(주의) => "주의"
+    elseif (5 <= $runnyNose && $runnyNose < 10 && 3 <= $ophthalmicSecretion && $ophthalmicSecretion < 6) {
+        $sectionScores["care"] = $sectionScores["care"] + 1;
+    }
+    // 비강, 안구분비물 중 1개라도 "경보" => "경보"
+    elseif (10 <= $runnyNose || 6 <= $ophthalmicSecretion) {
+        $sectionScores["warning"] = $sectionScores["warning"] + 1;
+    }
+    return $sectionScores;
+}
+
+
+
+
 
 // 질병 영역 2 계산 (기침, 호흡장애)
 function getDiseaseSectionTwo($cough, $numOfSample, $respiratoryFailure)
@@ -382,6 +412,7 @@ function getDiseaseSectionThree($ruminant, $diarrhea)
     return $sectionScores;
 }
 // 질병 영역 4 계산 (폐사율)
+// 여기 이상하네 
 function getDiseaseSectionFour($fallDead)
 {
     $sectionScores = array("care" => 0, "warning" => 0);
@@ -772,3 +803,4 @@ function getTotalScore($protocolScoreOne,$protocolScoreTow,$protocolScoreThree,$
     return $protocolScoreOne+$protocolScoreTow+$protocolScoreThree+$protocolScoreFour;
 }
 ?>
+ 
